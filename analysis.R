@@ -2,57 +2,48 @@
 # PrEP STI Screening Analysis Script
 
 library("ARTnetData")
+library("tidyverse")
 
+## Load Wide and Long Form Datasets
 d <- ARTnet.wide
 l <- ARTnet.long
 
+## Limit Analysis to HIV-negative and ever HIV tested
+d <- filter(d, hiv == 0 & EVERTEST == 1)
+nrow(d)
+
+# Reviewing patterns of missingness for PrEP Use Variable
+table(d$survey.year, d$PREP_REVISED, useNA = "always")
+table(d$SUB_DATE, d$PREP_REVISED, useNA = "always")
+
+## Limit analysis to MSM not missing PrEP use
+d <- filter(d, !is.na(PREP_REVISED))
+nrow(d)
+
+
+
+# Table 1 -----------------------------------------------------------------
+
+
+# demographics, geography (DIVCODE), risk behavior by PrEP never, 
+#    PrEP ever not current, PrEP current
+
+## Q13: Have you ever taken PrEP (i.e. Truvada)?
 table(d$PREP_REVISED, useNA = "always")
-table(d$PREP_CURRENT, useNA = "always")
 
-# from AMIS, ever, PY prep
-table(d$PREP_EVER)
-table(d$PREP_USED)
 
-table(d$hiv)
+## Q14. Are you currently taking PrEP (i.e. Truvada)?
+table(d$artnetPREP_CURRENT, useNA = "always")
+table(d$artnetPREP_CURRENT, d$PREP_REVISED, useNA = "always")
 
-table(d$PREP_REVISED, d$survey.year, useNA = "always")
 
-prep.elig <- ifelse((d$RCNTRSLT == 1 & d$EVRPOS == 0) | 
-                    (d$RCNTRSLT == 1 & d$EVRPOS == 0 & d$STATUS == 1), 1, 0)
-table(prep.elig)
 
-# 1565 NA, but only 483 inelig
-table(d$PREP_REVISED, useNA = "always")
 
-table(d$PREP_CURRENT, useNA = "always")
-131+659+1+1
 
-table(d$PREPCHKFREQ, useNA = "always")
+# Table 2 -----------------------------------------------------------------
 
-table(d$PREPCHKFREQ_CURR, useNA = "always")
-
-# 1:4: always, sometimes, rarely, never
-table(d$PREP_HIVTESTFREQ, useNA = "always")
-d$prep.hiv.always <- ifelse(d$PREP_HIVTESTFREQ %in% 2:4, 0, d$PREP_HIVTESTFREQ)
-table(d$prep.hiv.always, useNA = "always")
-
-table(d$race.cat)
-mod <- glm(prep.hiv.always ~ age, data = d, family = binomial())
-summary(mod)
-
-table(d$PREP_STITHROATFREQ, useNA = "always")
-table(d$PREP_STIRECTFREQ, useNA = "always")
-d$prep.rect.always <- ifelse(d$PREP_STIRECTFREQ %in% 2:4, 0, d$PREP_STIRECTFREQ)
-table(d$prep.rect.always, useNA = "always")
-
-mod <- glm(prep.rect.always ~ as.factor(DIVCODE), data = d, family = binomial())
-summary(mod)
-plogis(coef(mod))
-
-d$DIVCODE
-
-table(d$PREP_STIURETHFREQ, useNA = "always")
-table(d$PREP_BLOODFREQ, useNA = "always")
+# causal question: is HIV screening rate and STI screening rate higher
+# in current PrEP users compared to non-current PrEP users and never PrEP users?
 
 table(d$STITEST_2YR, useNA = "always")
 d$STITEST_2YR <- ifelse(d$STITEST_2YR == 2015, NA, d$STITEST_2YR)
@@ -80,3 +71,63 @@ table(d$STITESTFREQ, useNA = "always")
 table(d$HIVFREQ_PREP, useNA = "always")
 table(d$STIFREQ_PREP, useNA = "always")
 
+
+
+# Table 3 -----------------------------------------------------------------
+
+# What are the predictors of recommended HIV and all-site STI screening in ever PrEP 
+# users -- is there variation by demographics, risk behavior, or geogrpahy?
+
+
+## Q15. While you were using PrEP (i.e. Truvada), how often did you return to the 
+##      clinic or doctor’s office who prescribed you PrEP for check-ups related to PrEP?
+##      [For Non Current PrEP Users]
+##      1: 1 Month; 2: 3 Months; 3: 6 Months; 4: 9 Months; 6: Only Once; 
+##      7: Some other interval; 8: Did not return regularly
+table(d$PREPCHKFREQ, useNA = "always")
+
+## Q16. Same as Q15, for Current PrEP Users
+table(d$PREPCHKFREQ_CURR, useNA = "always")
+
+## Q17a: How Often Tested for HIV
+##       1:4: always, sometimes, rarely, never
+table(d$PREP_HIVTESTFREQ, useNA = "always")
+
+# Recoding for always/not
+d$prep.hiv.always <- ifelse(d$PREP_HIVTESTFREQ %in% 2:4, 0, d$PREP_HIVTESTFREQ)
+table(d$prep.hiv.always, useNA = "always")
+
+## Q17b: How Often Tested for STIs in Throat
+##       1:4: always, sometimes, rarely, never
+table(d$PREP_STITHROATFREQ, useNA = "always")
+
+## Q17c: How Often Tested for STIs Rectal
+##       1:4: always, sometimes, rarely, never
+table(d$PREP_STIRECTFREQ, useNA = "always")
+d$prep.rect.always <- ifelse(d$PREP_STIRECTFREQ %in% 2:4, 0, d$PREP_STIRECTFREQ)
+table(d$prep.rect.always, useNA = "always")
+
+mod <- glm(prep.rect.always ~ as.factor(DIVCODE), data = d, family = binomial())
+summary(mod)
+plogis(coef(mod))
+
+## Q17c: How Often Tested for STIs Urethral
+##       1:4: always, sometimes, rarely, never
+table(d$PREP_STIURETHFREQ, useNA = "always")
+
+
+## Q17d: How Often Tested for STIs Blood
+##       1:4: always, sometimes, rarely, never
+table(d$PREP_BLOODFREQ, useNA = "always")
+
+
+
+# Figure 1 ----------------------------------------------------------------
+
+# Boxplot type figure related to Table 2
+
+
+
+# Figure 2 ----------------------------------------------------------------
+
+# Map related to Table 3
