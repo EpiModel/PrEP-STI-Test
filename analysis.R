@@ -2,6 +2,9 @@
 # PrEP STI Screening Analysis Script
 
 library("ARTnetData")
+sessioninfo::session_info()
+# ARTnetData  * 1.0     2019-04-25 [1] Github (EpiModel/ARTnetData@f07ba02)
+
 library("tidyverse")
 
 ## Load Wide and Long Form Datasets
@@ -9,7 +12,7 @@ d <- ARTnet.wide
 l <- ARTnet.long
 
 ## Limit Analysis to HIV-negative and ever HIV tested
-d <- filter(d, hiv == 0 & EVERTEST == 1)
+d <- filter(d, hiv2 == 0 & EVERTEST == 1)
 nrow(d)
 
 # Reviewing patterns of missingness for PrEP Use Variable
