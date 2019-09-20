@@ -11,6 +11,7 @@ library("tidyverse")
 d <- ARTnet.wide
 l <- ARTnet.long
 # comment
+# comment 2
 ## Limit Analysis to HIV-negative and ever HIV tested
 d <- filter(d, hiv2 == 0 & EVERTEST == 1)
 nrow(d)
