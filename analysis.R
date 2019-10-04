@@ -24,7 +24,6 @@ d <- filter(d, !is.na(PREP_REVISED))
 nrow(d)
 
 
-
 # Table 1 -----------------------------------------------------------------
 
 
@@ -50,6 +49,8 @@ d$prep_cat <- ifelse(d$PREP_REVISED == 0, 0,
                     
 table(d$prep_cat, useNA = "always")
 
+# Limit analysis to MSM not missing Current/Non-Current PrEP use
+d <- filter(d, !is.na(prep_cat))
 
 ## Race
 addmargins(table(d$race, d$prep_cat, useNA = "always"))
@@ -62,11 +63,21 @@ d$race.cat2 <- ifelse(d$race == "asian" &
                         d$race.cat)
 
 table(d$race.cat2, useNA = "always")
-table(d$race.cat2, useNA = "always")/3262*100
+table(d$race.cat2, useNA = "always")/3259*100
 
 race <- table(d$race.cat2, d$prep_cat, useNA = "always")
 race_perc <- t(t(race)/colSums(race)*100)
 colSums(race_perc)
+
+
+## Age
+mean(d$age)
+sd(d$age)
+
+d %>%
+  group_by(prep_cat) %>%
+  summarize(mean = mean(age),
+            sd = sd(age))
 
 ### Create categories for age
   # 0: 15-24
@@ -84,7 +95,7 @@ d$age_cat <- ifelse(d$age >= 15 & d$age <= 24, 0,
              ifelse(d$age >= 66, 5, NA)))))) 
 
 table(d$age_cat, useNA = "always")
-table(d$age_cat)/3262*100
+table(d$age_cat)/3259*100
 
 age <- table(d$age_cat, d$prep_cat, useNA = 'always')
 age
@@ -96,7 +107,7 @@ age_perc
 ## Census region and division
 
 table(d$DIVCODE, useNA = "always")
-table(d$DIVCODE)/3262*100
+table(d$DIVCODE)/3259*100
 
 census <- table(d$DIVCODE, d$prep_cat, useNA = 'always')
 census
@@ -106,7 +117,7 @@ census_perc
 ## Urbanicity
 
 table(d$NCHS_2013, useNA = "always")
-table(d$NCHS_2013)/3262*100
+table(d$NCHS_2013)/3259*100
 
 urban <- table(d$NCHS_2013, d$prep_cat, useNA = 'always')
 urban
@@ -115,18 +126,36 @@ urban_perc
 
 ## Highest level of education
 
-table(d$HLEDUCAT, useNA = "always")
-table(d$HLEDUCAT, useNA = "always")/3262*100
+### Re-categorize education
 
-education <- table(d$HLEDUCAT, d$prep_cat, useNA = 'always')
+# 0: High school or below
+# 1: Some college
+# 2: College and above
+# NA: Missing ()
+
+d$HLEDUCAT_2 <- ifelse(d$HLEDUCAT <= 3, 0,
+                ifelse(d$HLEDUCAT == 4, 1,
+                ifelse(d$HLEDUCAT == 5, 2, NA)))
+
+addmargins(table(d$HLEDUCAT, useNA = "always"))
+table(d$HLEDUCAT_2, useNA = "always")
+table(d$HLEDUCAT_2, useNA = "always")/3259*100
+
+education <- table(d$HLEDUCAT_2, d$prep_cat, useNA = 'always')
 education
 education_perc <- t(t(education)/colSums(education)*100)
 education_perc
 
 ## Annual income
 
+### Collapse 'Prefer not to answer', 'Don't know', and 'Missing' to 'Missing'
+
+d$HHINCOME <- ifelse(d$HHINCOME == 77 |
+                     d$HHINCOME == 99, NA,
+                     d$HHINCOME)
+
 table(d$HHINCOME, useNA = "always")
-table(d$HHINCOME, useNA = "always")/3262*100
+table(d$HHINCOME, useNA = "always")/3259*100
 
 income <- table(d$HHINCOME, d$prep_cat, useNA = 'always')
 income
@@ -135,77 +164,24 @@ income_perc
 
 ## Health insurance
 
-d_ins <- d %>%
-  select(AMIS_ID, TYP_INSA:TYP_INSC) %>%
-  gather(TYPE, INSURANCE, TYP_INSA:TYP_INSC)
+# Re-categorize health insurance
+# 0: No health insurance
+# 1: Health insurance, not private
+# 2: Health insurance, private
 
-table(d_ins$TYPE, d_ins$INSURANCE, useNA = "always")
-table(d_ins$TYPE, d_ins$INSURANCE, useNA = "always")/3262*100
+d$insurance <- ifelse(d$TYP_INSA == 1 | d$TYP_INSA2 == 1, 2, 
+               ifelse(d$TYP_INSG == 1 | d$TYP_INSH == 1 |
+                      d$TYP_INSD == 1 | d$TYP_INSE == 1 |
+                      d$TYP_INSF == 1, 1,
+               ifelse(d$TYP_INSI == 1, 0, NA)))
 
-# private health plan through employer
-typ_insa <- table(d$TYP_INSA, d$prep_cat, useNA = 'always')
-typ_insa
-insa_perc <- t(t(typ_insa)/colSums(typ_insa)*100)
-insa_perc
-
-# private health plan through exchange
-typ_insa2 <- table(d$TYP_INSA2, d$prep_cat, useNA = 'always')
-typ_insa2
-insa2_perc <- t(t(typ_insa2)/colSums(typ_insa2)*100)
-insa2_perc
-
-# Medicaid or Medicare
-typ_insg <- table(d$TYP_INSG, d$prep_cat, useNA = 'always')
-typ_insg
-insg_perc <- t(t(typ_insg)/colSums(typ_insg)*100)
-insg_perc
-
-# some other medical assistance program
-typ_insh <- table(d$TYP_INSH, d$prep_cat, useNA = 'always')
-typ_insh
-insh_perc <- t(t(typ_insh)/colSums(typ_insh)*100)
-insh_perc
-
-# TRICARE
-typ_insd <- table(d$TYP_INSD, d$prep_cat, useNA = 'always')
-typ_insd
-insd_perc <- t(t(typ_insd)/colSums(typ_insd)*100)
-insd_perc
-
-# VA
-typ_inse <- table(d$TYP_INSE, d$prep_cat, useNA = 'always')
-typ_inse
-inse_perc <- t(t(typ_inse)/colSums(typ_inse)*100)
-inse_perc
-
-# some other health care plan
-typ_insf <- table(d$TYP_INSF, d$prep_cat, useNA = 'always')
-typ_insf
-insf_perc <- t(t(typ_insf)/colSums(typ_insf)*100)
-insf_perc
-
-# don't currently have health insurance
-typ_insi <- table(d$TYP_INSI, d$prep_cat, useNA = 'always')
-typ_insi
-insi_perc <- t(t(typ_insi)/colSums(typ_insi)*100)
-insi_perc
-
-# prefer not to answer
-typ_insb <- table(d$TYP_INSB, d$prep_cat, useNA = 'always')
-typ_insb
-insb_perc <- t(t(typ_insb)/colSums(typ_insb)*100)
-insb_perc
-
-# don't know
-typ_insc <- table(d$TYP_INSC, d$prep_cat, useNA = 'always')
-typ_insc
-insc_perc <- t(t(typ_insc)/colSums(typ_insc)*100)
-insc_perc
+addmargins(table(d$insurance, useNA = 'always'))
+table(d$insurance, useNA = 'always')/3259*100
 
 ## Visited HCP in last 12 mo
 
 table(d$SEEHCP, useNA = "always")
-table(d$SEEHCP)/3262*100
+table(d$SEEHCP)/3259*100
 
 hcp <- table(d$SEEHCP, d$prep_cat, useNA = 'always')
 hcp
@@ -241,7 +217,7 @@ addmargins(table(d$prep_cat, d$STITEST_2YR_PREP, useNA = "always"))
 # how many were due to STI symptoms
 table(d$STITEST_2YR_SYMPT, useNA = "always")
 
-# Identify any logic discrepancies between 
+# Identify any logic discrepancies between STI tests and test based on symptoms
 # None found 
 table(d$STITEST_2YR, d$STITEST_2YR_SYMPT, useNA = "always") 
 
@@ -263,6 +239,8 @@ a <- d %>%
             # Never PrEP users
             mean_2yr = mean(STITEST_2YR, na.rm = T),
             sd_2yr = sd(STITEST_2YR, na.rm = T),
+            median_2yr = mean(STITEST_2YR, na.rm = T),
+            iqr_2yr = sd(STITEST_2YR, na.rm = T),
             mean_2yr_sym = mean(STITEST_2YR_SYMPT, na.rm = T),
             sd_2yr_sym = sd(STITEST_2YR_SYMPT, na.rm = T),
             mean_2yr_not = mean(STITEST_2YR_NOTIF, na.rm = T),
