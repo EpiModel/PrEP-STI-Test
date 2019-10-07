@@ -178,6 +178,11 @@ d$insurance <- ifelse(d$TYP_INSA == 1 | d$TYP_INSA2 == 1, 2,
 addmargins(table(d$insurance, useNA = 'always'))
 table(d$insurance, useNA = 'always')/3259*100
 
+insurance <- table(d$insurance, d$prep_cat, useNA = 'always')
+insurance
+insurance_perc <- t(t(insurance)/colSums(insurance)*100)
+insurance_perc
+
 ## Visited HCP in last 12 mo
 
 table(d$SEEHCP, useNA = "always")
@@ -194,66 +199,223 @@ hcp_perc
 # causal question: is HIV screening rate and STI screening rate higher
 # in current PrEP users compared to non-current PrEP users and never PrEP users?
 
-# STI testing among NEVER PrEP users
-# Number of times tested for an STI within the past 2 years
-# could include syphilis, gonorrhea, and chlamydia (but not HIV)
+## Descriptive Table 2
+
+# Ever tested for STI (AMIS)
+addmargins(table(d$EVERSTI_TEST, useNA = "always"))
+table(d$EVERSTI_TEST, useNA = "always")/3259*100
+
+evertest <- table(d$EVERSTI_TEST, d$prep_cat, useNA = "always")
+evertest
+evertest_perc <- t(t(evertest)/colSums(evertest)*100)
+evertest_perc
+
+# Any STI test in past 12 months (AMIS)
+addmargins(table(d$ANYSTI_TEST, useNA = "always"))
+table(d$ANYSTI_TEST, useNA = "always")/3259*100
+
+anytest <- table(d$ANYSTI_TEST, d$prep_cat, useNA = "always")
+anytest
+anytest_perc <- t(t(anytest)/colSums(anytest)*100)
+anytest_perc
+
+# Samples used for testing in the past 12 months (AMIS)
+d_samples <- d %>%
+  select(AMIS_ID, STITEST_BLOOD:STITEST_DK) %>%
+  gather(Sample, YN, STITEST_BLOOD:STITEST_DK)
+
+table(d_samples$Sample, d_samples$YN, useNA = "always")
+table(d_samples$Sample, d_samples$YN, useNA = "always")/3259*100
+
+## Blood sample by PrEP category
+blood <- table(d$STITEST_BLOOD, d$prep_cat, useNA = "always")
+blood
+blood_perc <- t(t(blood)/colSums(blood)*100)
+blood_perc
+
+## Urine sample by PrEP category
+urine <- table(d$STITEST_URINE, d$prep_cat, useNA = "always")
+urine
+urine_perc <- t(t(urine)/colSums(urine)*100)
+urine_perc
+
+## Rectal sample by PrEP category
+rectal <- table(d$STITEST_RECTUM, d$prep_cat, useNA = "always")
+rectal
+rectal_perc <- t(t(rectal)/colSums(rectal)*100)
+rectal_perc
+
+## Throat sample by PrEP category
+throat <- table(d$STITEST_THROAT, d$prep_cat, useNA = "always")
+throat
+throat_perc <- t(t(throat)/colSums(throat)*100)
+throat_perc
+
+## Don't know sample by PrEP category
+DK <- table(d$STITEST_DK, d$prep_cat, useNA = "always")
+DK
+DK_perc <- t(t(DK)/colSums(DK)*100)
+DK_perc
+
+# STI Diagnosis (AMIS)
+
+d_diag <- d %>%
+  select(AMIS_ID, BSTIA:BSTIF) %>%
+  gather(Diagnosis, YN, BSTIA:BSTIF)
+
+table(d_diag$Diagnosis, d_diag$YN, useNA = "always")
+table(d_diag$Diagnosis, d_diag$YN, useNA = "always")/3259*100
+
+## Gonorrhea diagnosis by PrEP category
+gonorrhea <- table(d$BSTIA, d$prep_cat, useNA = "always")
+gonorrhea
+gonorrhea_perc <- t(t(gonorrhea)/colSums(gonorrhea)*100)
+gonorrhea_perc
+
+## Chlamydia diagnosis by PrEP category
+chlamydia <- table(d$BSTIB, d$prep_cat, useNA = "always")
+chlamydia
+chlamydia_perc <- t(t(chlamydia)/colSums(chlamydia)*100)
+chlamydia_perc
+
+## Syphilis diagnosis by PrEP category
+syphilis <- table(d$BSTIC, d$prep_cat, useNA = "always")
+syphilis
+syphilis_perc <- t(t(syphilis)/colSums(syphilis)*100)
+syphilis_perc
+
+## No diagnosis by PrEP category
+noSTI <- table(d$BSTID, d$prep_cat, useNA = "always")
+noSTI
+noSTI_perc <- t(t(noSTI)/colSums(noSTI)*100)
+noSTI_perc
+
+## Prefer not to answer re: diagnosis by PrEP category
+PNTA_STI <- table(d$BSTIE, d$prep_cat, useNA = "always")
+PNTA_STI
+PNTA_STI_perc <- t(t(PNTA_STI)/colSums(PNTA_STI)*100)
+PNTA_STI_perc
+
+## Don't know diagnosis by PrEP category
+DK_STI <- table(d$BSTIF, d$prep_cat, useNA = "always")
+DK_STI
+DK_STI_perc <- t(t(DK_STI)/colSums(DK_STI)*100)
+DK_STI_perc
+
+# Recent STI testing 
+## Number of times tested for an STI within the past 2 years
+## NOT at PrEP visits
+
+### Clean data
 table(d$STITEST_2YR, useNA = "always")
 d$STITEST_2YR <- ifelse(d$STITEST_2YR == 2015, NA, d$STITEST_2YR) 
-summary(d$STITEST_2YR)
-
-addmargins(table(d$prep_cat, d$STITEST_2YR, useNA = "always"))
-
-# STI testing among EVER PrEP Users (Current and Non-Current)
-# Number of times testing for an STI within the past 2 years
-# NOT during a PrEP visit
-# could include syphilis, gonorrhea, and chlamydia (but not HIV)
 table(d$STITEST_2YR_PREP, useNA = "always")
 d$STITEST_2YR_PREP <- ifelse(d$STITEST_2YR_PREP == 2000, NA, d$STITEST_2YR_PREP)
-summary(d$STITEST_2YR_PREP)
 
-addmargins(table(d$prep_cat, d$STITEST_2YR_PREP, useNA = "always"))
+### Combine data for NEVER and EVER PrEP users
+d$STITEST_2YR_COMBINED <- ifelse(is.na(d$STITEST_2YR),
+                                 d$STITEST_2YR_PREP, 
+                                 d$STITEST_2YR)
 
-# Of the tests in past 2 years (above) not from PrEP visit
-# how many were due to STI symptoms
-table(d$STITEST_2YR_SYMPT, useNA = "always")
+summary(d$STITEST_2YR_COMBINED)
+sd(d$STITEST_2YR_COMBINED, na.rm = T)
 
-# Identify any logic discrepancies between STI tests and test based on symptoms
-# None found 
+d %>% 
+  group_by(prep_cat) %>%
+  summarise(mean = mean(STITEST_2YR_COMBINED, na.rm = T),
+            sd = sd(STITEST_2YR_COMBINED, na.rm = T),
+            median = median(STITEST_2YR_COMBINED, na.rm = T))
+
+addmargins(table(d$STITEST_2YR_COMBINED, d$survey.year, useNA = "always"))
+
+## Recent STI testing due to symptoms 
+### Check logic discrepancies between STI tests and test based on symptoms
+### None found 
 table(d$STITEST_2YR, d$STITEST_2YR_SYMPT, useNA = "always") 
+table(d$STITEST_2YR_PREP, d$STITEST_2YR_SYMPT_PREP, useNA = "always")
 
-table(d$STITEST_2YR_NOTIF, useNA = "always")
+### Combine data for NEVER and EVER PrEP users / STI testing due to symptoms
+d$STITEST_SYMPT_COMB <- ifelse(is.na(d$STITEST_2YR_SYMPT),
+                               d$STITEST_2YR_SYMPT_PREP, 
+                               d$STITEST_2YR_SYMPT)
 
-table(d$STITEST_2YR_SYMPT_PREP, useNA = "always")
-table(d$STITEST_2YR_NOTIF_PREP, useNA = "always")
+summary(d$STITEST_SYMPT_COMB)
+sd(d$STITEST_SYMPT_COMB, na.rm = T)
 
-table(d$STIREG, useNA = "always")
-table(d$STITESTFREQ, useNA = "always")
+d %>% 
+  group_by(prep_cat) %>%
+  summarise(mean = mean(STITEST_SYMPT_COMB, na.rm = T),
+            sd = sd(STITEST_SYMPT_COMB, na.rm = T),
+            median = median(STITEST_SYMPT_COMB, na.rm = T))
+
+addmargins(table(d$STITEST_SYMPT_COMB, d$survey.year, useNA = "always"))
+
+## Recent STI testing due to partner notification 
+### Check logic discrepancies between STI tests and test based on partner notification
+### None found 
+table(d$STITEST_2YR, d$STITEST_2YR_NOTIF, useNA = "always") 
+table(d$STITEST_2YR_PREP, d$STITEST_2YR_NOTIF_PREP, useNA = "always")
+
+### Combine data for NEVER and EVER PrEP users / STI testing due to symptoms
+d$STITEST_NOTIF_COMB <- ifelse(is.na(d$STITEST_2YR_NOTIF),
+                               d$STITEST_2YR_NOTIF_PREP, 
+                               d$STITEST_2YR_NOTIF)
+
+summary(d$STITEST_NOTIF_COMB)
+sd(d$STITEST_NOTIF_COMB, na.rm = T)
+
+d %>% 
+  group_by(prep_cat) %>%
+  summarise(mean = mean(STITEST_NOTIF_COMB, na.rm = T),
+            sd = sd(STITEST_NOTIF_COMB, na.rm = T),
+            median = median(STITEST_NOTIF_COMB, na.rm = T))
+
+addmargins(table(d$STITEST_NOTIF_COMB, d$survey.year, useNA = "always"))
+
+# Regular testing for STIs (NEVER PrEP users)
+table(d$STIREG, d$prep_cat, useNA = "always")
+table(d$STIREG, d$prep_cat, useNA = "always")/2450*100
+
+# STI testing frequency if regularly tested for STIs (NEVER PrEP users)
+table(d$STITESTFREQ, d$prep_cat, useNA = "always")
+d$STITESTFREQ <- ifelse(d$prep_cat == 2, NA, d$STITESTFREQ)
+table(d$STITESTFREQ, d$prep_cat, useNA = "always")/2450*100
+
+# Frequency of PrEP-related check-ups among non-current PrEP users
+table(d$PREPCHKFREQ, d$prep_cat, useNA = "always")
+table(d$PREPCHKFREQ, d$prep_cat, useNA = "always")/178*100
+
+# Frequency of PrEP-related check-ups among current PrEP users
+table(d$PREPCHKFREQ_CURR, d$prep_cat, useNA = "always")
+table(d$PREPCHKFREQ_CURR, d$prep_cat, useNA = "always")/631*100
+
+# Frequency of STI testing after using PrEP compared to before  among current users
+table(d$STIFREQ_PREP, d$prep_cat, useNA = "always")
+table(d$STIFREQ_PREP, d$prep_cat, useNA = "always")/631*100
+
+# Frequency of throat swab/STI testing at PrEP visits
+prep_throat <- table(d$PREP_STITHROATFREQ, d$prep_cat, useNA = "always")
+prep_throat
+prep_throat_perc <- t(t(prep_throat)/colSums(prep_throat)*100)
+prep_throat_perc
+
+# Frequency of rectal swab/STI testing at PrEP visits
+prep_rectal <- table(d$PREP_STIRECTFREQ, d$prep_cat, useNA = "always")
+prep_rectal
+prep_rectal_perc <- t(t(prep_rectal)/colSums(prep_rectal)*100)
+prep_rectal_perc
+
+# Frequency of urine sample/STI testing at PrEP visits
+prep_urine <- table(d$PREP_STIURETHFREQ, d$prep_cat, useNA = "always")
+prep_urine
+prep_urine_perc <- t(t(prep_urine)/colSums(prep_urine)*100)
+prep_urine_perc
+
+### HIV Testing ------------------------------
 
 table(d$HIVFREQ_PREP, useNA = "always")
-table(d$STIFREQ_PREP, useNA = "always")
 
-# Create summary table of continuous outcomes above by PrEP use category
-a <- d %>%
-  group_by(prep_cat) %>%
-  summarise(
-            # Never PrEP users
-            mean_2yr = mean(STITEST_2YR, na.rm = T),
-            sd_2yr = sd(STITEST_2YR, na.rm = T),
-            median_2yr = mean(STITEST_2YR, na.rm = T),
-            iqr_2yr = sd(STITEST_2YR, na.rm = T),
-            mean_2yr_sym = mean(STITEST_2YR_SYMPT, na.rm = T),
-            sd_2yr_sym = sd(STITEST_2YR_SYMPT, na.rm = T),
-            mean_2yr_not = mean(STITEST_2YR_NOTIF, na.rm = T),
-            sd_2yr_not = sd(STITEST_2YR_NOTIF, na.rm = T),
-            
-            # Ever PrEP users
-            mean_2yr_prep = mean(STITEST_2YR_PREP, na.rm = T),
-            sd_2yr_prep = sd(STITEST_2YR_PREP, na.rm = T),
-            mean_2yr_sym_prep = mean(STITEST_2YR_SYMPT_PREP, na.rm = T),
-            sd_2yr_sym_prep = sd(STITEST_2YR_SYMPT_PREP, na.rm = T),
-            mean_2yr_not_prep = mean(STITEST_2YR_NOTIF_PREP, na.rm = T),
-            sd_2yr_not_prep = sd(STITEST_2YR_NOTIF_PREP, na.rm = T),
-            )
+
 
 
 # Table 3 -----------------------------------------------------------------
