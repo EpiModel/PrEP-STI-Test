@@ -183,16 +183,6 @@ insurance
 insurance_perc <- t(t(insurance)/colSums(insurance)*100)
 insurance_perc
 
-## Visited HCP in last 12 mo
-
-table(d$SEEHCP, useNA = "always")
-table(d$SEEHCP)/3259*100
-
-hcp <- table(d$SEEHCP, d$prep_cat, useNA = 'always')
-hcp
-hcp_perc <- t(t(hcp)/colSums(hcp)*100)
-hcp_perc
-
 
 # Table 2 -----------------------------------------------------------------
 
@@ -411,14 +401,65 @@ prep_urine
 prep_urine_perc <- t(t(prep_urine)/colSums(prep_urine)*100)
 prep_urine_perc
 
-### HIV Testing ------------------------------
+# Table 4 -----------------------------------------------------------------
+## Descriptive table of HIV testing by PrEP use
 
-table(d$HIVFREQ_PREP, useNA = "always")
+# Ever tested for HIV (100% have been tested)
+table(d$EVERTEST, d$prep_cat, useNA = "always")
 
+# Were offered an HIV test during a health care visit in past 12 mo
+table(d$RECCHIV, useNA = "always")
+table(d$RECCHIV, useNA = "always")/3259*100
 
+recHIVtest <- table(d$RECCHIV, d$prep_cat, useNA = "always")
+recHIVtest
+recHIVtest_perc <- t(t(recHIVtest)/colSums(recHIVtest)*100)
+recHIVtest_perc
 
+# Number of times tested for HIV in the past 2 years (100$) (AMIS)
+summary(d$TEST2YRS)
+sd(d$TEST2YRS, na.rm = T)
 
-# Table 3 -----------------------------------------------------------------
+d %>%
+  group_by(prep_cat) %>%
+  summarise(mean = mean(TEST2YRS, na.rm = T),
+            sd = sd(TEST2YRS, na.rm = T),
+            median = median(TEST2YRS, na.rm = T))
+
+# Had an HIV test in past 12 months
+table(d$TSTP12M, useNA = "always")
+d$TSTP12M <- ifelse(d$TSTP12M == 9, NA, d$TSTP12M)
+table(d$TSTP12M, useNA = "always")/3259*100
+
+HIVtest_p12m <- table(d$TSTP12M, d$prep_cat, useNA = "always")
+HIVtest_p12m
+HIVtest_p12m_perc <- t(t(HIVtest_p12m)/colSums(recHIVtest)*100)
+HIVtest_p12m_perc
+
+# Location of most recent HIV test
+table(d$LOCHIV_T, useNA = "always")
+d$LOCHIV_T <- ifelse(d$LOCHIV_T == 77, NA, 
+                     ifelse(d$LOCHIV_T == 99, NA, d$LOCHIV_T))
+table(d$LOCHIV_T, useNA = "always")/3259*100
+
+HIVtest_loc <- table(d$LOCHIV_T, d$prep_cat, useNA = "always")
+HIVtest_loc
+HIVtest_loc_perc <- t(t(HIVtest_loc)/colSums(HIVtest_loc)*100)
+HIVtest_loc_perc
+
+# Frequency of HIV testing during PrEP visits
+prepHIVtest_freq <- table(d$PREP_HIVTESTFREQ, d$prep_cat, useNA = "always")
+prepHIVtest_freq
+prepHIVtest_perc <- t(t(prepHIVtest_freq)/colSums(prepHIVtest_freq)*100)
+prepHIVtest_perc
+
+# Frequency of HIV tests after PrEP use compared to before
+prepHIVtest_after <- table(d$HIVFREQ_PREP, d$prep_cat, useNA = "always")
+prepHIVtest_after
+prepHIVtest_afterp <- t(t(prepHIVtest_after)/colSums(prepHIVtest_after)*100)
+prepHIVtest_afterp
+
+# Table 4 -----------------------------------------------------------------
 
 # What are the predictors of recommended HIV and all-site STI screening in ever PrEP 
 # users -- is there variation by demographics, risk behavior, or geogrpahy?
@@ -465,7 +506,12 @@ table(d$PREP_STIURETHFREQ, useNA = "always")
 ##       1:4: always, sometimes, rarely, never
 table(d$PREP_BLOODFREQ, useNA = "always")
 
-
+mod <- glm(prep.rect.always ~ as.factor(DIVCODE), data = d, family = binomial())
+summary(mod)
+coef(mod)
+exp(coef(mod))
+exp(confint(mod))
+plogis(coef(mod))
 
 # Figure 1 ----------------------------------------------------------------
 
