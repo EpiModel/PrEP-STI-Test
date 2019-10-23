@@ -1042,13 +1042,11 @@ plogis(coef(mod.blood))
 
 # Logistic regression model (adjusted #1 / control for race/eth, age)
 # E: Census division  O: Blood STI testing
-mod1.blood <- glm(prep.blood.always ~ as.factor(DIVCODE) + age + race.cat + as.factor(HHINCOME) + 
-                    as.factor(insurance) + as.factor(HLEDUCAT_2),
+mod1.blood <- glm(prep.blood.always ~ as.factor(DIVCODE) + age + race.cat,
                   data = d2, family = binomial())
 summary(mod1.blood)
 exp(coef(mod1.blood))
 exp(confint(mod1.blood))
-plogis(coef(mod1.blood))
 
 # Logistic regression model (unadjusted)
 # E: Census region  O: Blood STI testing
@@ -1058,15 +1056,13 @@ exp(coef(mod2.blood))
 exp(confint(mod2.blood))
 plogis(coef(mod2.blood))
 
-# Logistic regression model (adjusted #1 / control for race/eth, age, income, insurance, education))
+# Logistic regression model (adjusted #1 / control for race/eth, age)
 # E: Census region  O: Blood STI testing
-mod3.blood <- glm(prep.blood.always ~ as.factor(region) + age + race.cat + as.factor(HHINCOME) + 
-                    as.factor(insurance) + as.factor(HLEDUCAT_2),
+mod3.blood <- glm(prep.blood.always ~ as.factor(region) + age + race.cat,
                   data = d2, family = binomial())
 summary(mod3.blood)
 exp(coef(mod3.blood))
 exp(confint(mod3.blood))
-plogis(coef(mod3.blood))
 
 # Logistic regression model (unadjusted)
 # E: Deep south  O: Blood STI testing
@@ -1076,15 +1072,13 @@ exp(coef(mod4.blood))
 exp(confint(mod4.blood))
 plogis(coef(mod4.blood))
 
-# Logistic regression model (adjusted #1 / control for race/eth, age, income, insurance, education))
+# Logistic regression model (adjusted #1 / control for race/eth, age)
 # E: Deep south  O: Blood STI testing
-mod5.blood <- glm(prep.blood.always ~ as.factor(deep_south) + age + race.cat + as.factor(HHINCOME) + 
-                    as.factor(insurance) + as.factor(HLEDUCAT_2),
+mod5.blood <- glm(prep.blood.always ~ as.factor(deep_south) + age + race.cat,
                   data = d2, family = binomial())
 summary(mod5.blood)
 exp(coef(mod5.blood))
 exp(confint(mod5.blood))
-plogis(coef(mod5.blood))
 
 # Logistic regression model (unadjusted)
 # E: Urbanicity  O: Blood STI testing
@@ -1094,15 +1088,13 @@ exp(coef(mod6.blood))
 exp(confint(mod6.blood))
 plogis(coef(mod6.blood))
 
-# Logistic regression model (adjusted #1 / control for race/eth, age, income, insurance, education))
+# Logistic regression model (adjusted #1 / control for race/eth, age)
 # E: Urbanicity   O: Blood STI testing
-mod7.blood <- glm(prep.blood.always ~ as.factor(NCHS_2013) + age + race.cat + as.factor(HHINCOME) + 
-                    as.factor(insurance) + as.factor(HLEDUCAT_2),
+mod7.blood <- glm(prep.blood.always ~ as.factor(NCHS_2013) + age + race.cat,
                   data = d2, family = binomial())
 summary(mod7.blood)
 exp(coef(mod7.blood))
 exp(confint(mod7.blood))
-plogis(coef(mod7.blood))
 
 # Logistic regression model (unadjusted)
 # E: Race/Ethnicity  O: Blood STI testing
@@ -1144,16 +1136,6 @@ exp(coef(mod12.blood))
 exp(confint(mod12.blood))
 plogis(coef(mod12.blood))
 
-# Logistic regression model (adjusted #1 / control for Census region, race/eth, income, insurance, education))
-# E: Age category  O: Blood STI testing
-mod13.blood <- glm(prep.blood.always ~ as.factor(age_cat) + as.factor(region) + race.cat + as.factor(HHINCOME) + 
-                    as.factor(insurance) + as.factor(HLEDUCAT_2),
-                  data = d2, family = binomial())
-summary(mod13.blood)
-exp(coef(mod13.blood))
-exp(confint(mod13.blood))
-plogis(coef(mod13.blood))
-
 
 ## Q17d: How Often Tested for STIs: Blood, Urethra, Throat, Urine
 ##       1:4: always, sometimes, rarely, never
@@ -1189,15 +1171,13 @@ exp(coef(mod.allsite))
 exp(confint(mod.allsite))
 plogis(coef(mod.allsite))
 
-# Logistic regression model (adjusted #1 / control for race/eth, age, income, insurance, education))
+# Logistic regression model (adjusted #1 / control for race/eth, age)
 # E: Census division  O: All-site STI testing
-mod1.allsite <- glm(prep.allsite.always ~ as.factor(DIVCODE) + age + race.cat + as.factor(HHINCOME) + 
-                    as.factor(insurance) + as.factor(HLEDUCAT_2),
+mod1.allsite <- glm(prep.allsite.always ~ as.factor(DIVCODE) + age + race.cat,
                   data = d2, family = binomial())
 summary(mod1.allsite)
 exp(coef(mod1.allsite))
 exp(confint(mod1.allsite))
-plogis(coef(mod1.allsite))
 
 # Logistic regression model (unadjusted)
 # E: Census region O: All-site STI testing
@@ -1207,15 +1187,13 @@ exp(coef(mod2.allsite))
 exp(confint(mod2.allsite))
 plogis(coef(mod2.allsite))
 
-# Logistic regression model (adjusted #1 / control for race/eth, age, income, insurance, education))
+# Logistic regression model (adjusted #1 / control for race/eth, age)
 # E: Census region  O: All-site STI testing
-mod3.allsite <- glm(prep.allsite.always ~ as.factor(region) + age + race.cat + as.factor(HHINCOME) + 
-                      as.factor(insurance) + as.factor(HLEDUCAT_2),
+mod3.allsite <- glm(prep.allsite.always ~ as.factor(region) + age + race.cat,
                     data = d2, family = binomial())
 summary(mod3.allsite)
 exp(coef(mod3.allsite))
 exp(confint(mod3.allsite))
-plogis(coef(mod3.allsite))
 
 # Logistic regression model (unadjusted)
 # E: Deep south O: All-site STI testing
@@ -1225,15 +1203,13 @@ exp(coef(mod4.allsite))
 exp(confint(mod4.allsite))
 plogis(coef(mod4.allsite))
 
-# Logistic regression model (adjusted #1 / control for race/eth, age, income, insurance, education))
+# Logistic regression model (adjusted #1 / control for race/eth, age)
 # E: Deep south  O: All-site STI testing
-mod5.allsite <- glm(prep.allsite.always ~ as.factor(deep_south) + age + race.cat + as.factor(HHINCOME) + 
-                      as.factor(insurance) + as.factor(HLEDUCAT_2),
+mod5.allsite <- glm(prep.allsite.always ~ as.factor(deep_south) + age + race.cat,
                     data = d2, family = binomial())
 summary(mod5.allsite)
 exp(coef(mod5.allsite))
 exp(confint(mod5.allsite))
-plogis(coef(mod5.allsite))
 
 # Logistic regression model (unadjusted)
 # E: Urbanicity O: All-site STI testing
@@ -1243,15 +1219,13 @@ exp(coef(mod6.allsite))
 exp(confint(mod6.allsite))
 plogis(coef(mod6.allsite))
 
-# Logistic regression model (adjusted #1 / control for race/eth, age, income, insurance, education))
+# Logistic regression model (adjusted #1 / control for race/eth, age)
 # E: Urbanicity  O: All-site STI testing
-mod7.allsite <- glm(prep.allsite.always ~ as.factor(NCHS_2013) + age + race.cat + as.factor(HHINCOME) + 
-                      as.factor(insurance) + as.factor(HLEDUCAT_2),
+mod7.allsite <- glm(prep.allsite.always ~ as.factor(NCHS_2013) + age + race.cat,
                     data = d2, family = binomial())
 summary(mod7.allsite)
 exp(coef(mod7.allsite))
 exp(confint(mod7.allsite))
-plogis(coef(mod7.allsite))
 
 # Logistic regression model (unadjusted)
 # E: Race/ethnicity O: All-site STI testing
@@ -1293,15 +1267,6 @@ exp(coef(mod12.allsite))
 exp(confint(mod12.allsite))
 plogis(coef(mod12.allsite))
 
-# Logistic regression model (adjusted #1 / control for census region, race/eth, income, insurance, education))
-# E: Age category  O: All-site STI testing
-mod13.allsite <- glm(prep.allsite.always ~ as.factor(age_cat) + as.factor(region) + race.cat + as.factor(HHINCOME) + 
-                      as.factor(insurance) + as.factor(HLEDUCAT_2),
-                    data = d2, family = binomial())
-summary(mod13.allsite)
-exp(coef(mod13.allsite))
-exp(confint(mod13.allsite))
-plogis(coef(mod13.allsite))
 
 # Considering exposure / any receptive anal intercourse in past year
 d2$RAI <- ifelse(d2$PART1RAI == 1 |
