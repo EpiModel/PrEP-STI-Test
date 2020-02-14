@@ -278,7 +278,7 @@ d %>%
 
 # Table 2 -----------------------------------------------------------------
 
-# causal question: is HIV screening rate and STI screening rate higher
+# is HIV screening rate and STI screening rate higher
 # in current PrEP users compared to non-current PrEP users and never PrEP users?
 
 ## Descriptive Table 2
@@ -309,81 +309,12 @@ table(d$PREP_BLOODFREQ, d$prep_cat, useNA = "always")
 
 # Table 3 -----------------------------------------------------------------
 
-# What are the predictors of recommended HIV and blood STI screening in ever PrEP 
+# What are the predictors of recommended blood and urogenital STI screening in ever PrEP 
 # users -- is there variation by demographics, risk behavior, or geogrpahy?
 
 # Create subset of ever PrEP users 
 # Excludes 3 PrEP users with missing data on current use
 d2 <- filter(d, d$PREP_REVISED == 1)
-
-# Recoding for always/not for HIV testing at PrEP visits
-d2$prep.hiv.always <- ifelse(d2$PREP_HIVTESTFREQ %in% 2:4, 0, d2$PREP_HIVTESTFREQ)
-table(d2$prep.hiv.always, useNA = "always")
-
-# Descriptive tables by exposure
-addmargins(table(d2$prep.hiv.always))
-addmargins(table(d2$DIVCODE, d2$prep.hiv.always))
-addmargins(table(d2$deep_south, d2$prep.hiv.always))
-addmargins(table(d2$race.cat, d2$prep.hiv.always))
-addmargins(table(d2$age_cat, d2$prep.hiv.always))
-addmargins(table(d2$insurance, d2$prep.hiv.always, useNA = "always"))
-
-# Logistic regression model (unadjusted)
-# E: Census division  O: HIV testing
-mod1.hiv <- glm(prep.hiv.always ~ as.factor(DIVCODE), data = d2, family = binomial())
-summary(mod1.hiv)
-exp(coef(mod1.hiv))
-exp(confint(mod1.hiv))
-
-a <- as.data.frame(coef(mod1.hiv))
-a$alpha <- mod1.hiv$coefficients[1]
-a$plogis <- plogis(a[,1] + a[,2])
-a
-
-# Logistic regression model (unadjusted)
-# E: Deep South  O: HIV testing
-mod2.hiv <- glm(prep.hiv.always ~ deep_south, data = d2, family = binomial())
-summary(mod2.hiv)
-exp(coef(mod2.hiv))
-exp(confint(mod2.hiv))
-
-plogis(sum(coef(mod2.hiv)))
-
-# Logistic regression model (unadjusted)
-# E: Race/ethnicity  O: HIV testing
-mod3.hiv <- glm(prep.hiv.always ~ race.cat, data = d2, family = binomial())
-summary(mod3.hiv)
-exp(coef(mod3.hiv))
-exp(confint(mod3.hiv))
-
-a3 <- as.data.frame(coef(mod3.hiv))
-a3$alpha <- mod3.hiv$coefficients[1]
-a3$plogis <- plogis(a3[,1] + a3[,2])
-a3
-
-# Logistic regression model (unadjusted)
-# E: Insurance  O: HIV testing
-mod4.hiv <- glm(prep.hiv.always ~ as.factor(insurance), data = d2, family = binomial())
-summary(mod4.hiv)
-exp(coef(mod4.hiv))
-exp(confint(mod4.hiv))
-
-a4 <- as.data.frame(coef(mod4.hiv))
-a4$alpha <- mod4.hiv$coefficients[1]
-a4$plogis <- plogis(a4[,1] + a4[,2])
-a4
-
-# Logistic regression model (unadjusted)
-# E: Age category  O: HIV testing
-mod5.hiv <- glm(prep.hiv.always ~ as.factor(age_cat), data = d2, family = binomial())
-summary(mod5.hiv)
-exp(coef(mod5.hiv))
-exp(confint(mod5.hiv))
-
-a5 <- as.data.frame(coef(mod5.hiv))
-a5$alpha <- mod5.hiv$coefficients[1]
-a5$plogis <- plogis(a5[,1] + a5[,2])
-a5
 
 ## Q17d: How Often Tested for STIs Blood
 ##       1:4: always, sometimes, rarely, never
@@ -730,17 +661,9 @@ plogis(sum(coef(mod6.ureth)))
 # Table 5 -----------------------------------------------------------------
 
 # Main predictor: Deep south
-# Outcomes: HIV testing and blood, urethral, rectal, & pharyngeal STI testing
+# Outcomes: blood, urogenital, rectal, & pharyngeal STI testing
 # Multivariable associations
 ## Adjusted for age, race/ethnicity, and exposure at site (where applicable)
-
-# Logistic regression model (adjusted / control for race/eth, age)
-# E: Deep South  O: HIV testing
-mod6.hiv <- glm(prep.hiv.always ~ deep_south + race.cat + age,
-                data = d2, family = binomial())
-summary(mod6.hiv)
-exp(coef(mod6.hiv))
-exp(confint(mod6.hiv))
 
 # Logistic regression model (adjusted / control for race/eth, age)
 # E: Deep south  O: Blood STI testing
