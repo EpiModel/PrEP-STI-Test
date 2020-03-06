@@ -7,6 +7,8 @@ sessioninfo::session_info()
 
 library("tidyverse") 
 library("lubridate") # used to manipulate dates
+library("sandwich") #used for Poisson regression with robust variance
+
 
 ## Load Wide and Long Form Datasets
 d <- ARTnet.wide
@@ -103,6 +105,7 @@ table(d$prep_cat, useNA = "always")
 
 # Limit analysis to MSM not missing Current/Non-Current PrEP use
 d <- filter(d, !is.na(prep_cat))
+nrow(d)
 
 ## Race
 addmargins(table(d$race.cat, d$prep_cat, useNA = "always"))
@@ -138,42 +141,19 @@ addmargins(table(d$age_cat, d$prep_cat, useNA = 'always'))
 ## Census division
 addmargins(table(d$DIVCODE, d$prep_cat, useNA = 'always'))
 
-## Deep South
-summary(d$State)
+## Southeast states
 table(is.na(d$State))
 
-### Create "deep south" indicator variable
-  # 0: Not in deep south
-  # 1: In deep south (NC, SC, GA, AL, MS, LA, FL)
+### Create "Southeast" indicator variable
+  # 0: Not in Southeast
+  # 1: In Southeast (AL, AR, FL, GA, KY, LA, MS, NC, SC, TN, VA, and WV)
 
-d$deep_south <- ifelse(d$State == "NC" |
-                       d$State == "SC" |
-                       d$State == "GA" |
-                       d$State == "AL" |
-                       d$State == "MS" |
-                       d$State == "LA" |
-                       d$State == "FL", 1, 0)
+d$southeast <- ifelse(d$State %in% c("AL", "AR", "FL", "GA", "KY", "LA",
+                                     "MS", "NC", "SC", "TN", "VA", "WV"),
+                      1, 0)
 
-table(d$State, d$deep_south)
-addmargins(table(d$deep_south, d$prep_cat, useNA = "always"))
-
-## Urbanicity
-addmargins(table(d$NCHS_2013, d$prep_cat, useNA = 'always'))
-
-## Highest level of education
-### Re-categorize education
-
-# 0: High school or below
-# 1: Some college
-# 2: College and above
-# NA: Missing ()
-
-d$HLEDUCAT_2 <- ifelse(d$HLEDUCAT <= 3, 0,
-                ifelse(d$HLEDUCAT == 4, 1,
-                ifelse(d$HLEDUCAT == 5, 2, NA)))
-
-addmargins(table(d$HLEDUCAT, useNA = "always"))
-addmargins(table(d$HLEDUCAT_2, d$prep_cat, useNA = 'always'))
+table(d$State, d$southeast)
+addmargins(table(d$southeast, d$prep_cat, useNA = "always"))
 
 ## Annual income
 
@@ -219,33 +199,6 @@ d$STITEST_P12M <- ifelse(d$EVERSTI_TEST == 0, 0, d$ANYSTI_TEST)
 
 addmargins(table(d$STITEST_P12M, d$prep_cat, useNA = "always"))
 
-# Recent STI testing 
-## Number of times tested for an STI within the past 2 years
-## STITEST_2YR_PREP asks question for NOT at PrEP visits
-
-### Clean data
-table(d$STITEST_2YR, d$prep_cat, useNA = "always")
-d$STITEST_2YR <- ifelse(d$STITEST_2YR == 2015, NA, d$STITEST_2YR) 
-
-table(d$STITEST_2YR_PREP, d$prep_cat, useNA = "always")
-d$STITEST_2YR_PREP <- ifelse(d$STITEST_2YR_PREP == 2000, NA, d$STITEST_2YR_PREP)
-
-### Combine data for NEVER and EVER PrEP users
-d$STITEST_2YR_COMBINED <- ifelse(is.na(d$STITEST_2YR),
-                                 d$STITEST_2YR_PREP, 
-                                 d$STITEST_2YR)
-
-summary(d$STITEST_2YR_COMBINED)
-sd(d$STITEST_2YR_COMBINED, na.rm = T)
-
-d %>% 
-  group_by(prep_cat) %>%
-  summarise(mean = mean(STITEST_2YR_COMBINED, na.rm = T),
-            sd = sd(STITEST_2YR_COMBINED, na.rm = T),
-            median = median(STITEST_2YR_COMBINED, na.rm = T))
-
-addmargins(table(d$STITEST_2YR_COMBINED, d$survey.year, useNA = "always"))
-
 ## Had an HIV test in the past 12 months
 table(d$TSTP12M, useNA = "always")
 d$TSTP12M <- ifelse(d$TSTP12M == 9, NA, d$TSTP12M)
@@ -265,20 +218,10 @@ d <- d %>%
 
 addmargins(table(d$TSTP12M_COMB, d$prep_cat, useNA = "always"))
 
-# Number of times tested for HIV in the past 2 years 
-summary(d$TEST2YRS)
-sd(d$TEST2YRS, na.rm = T)
-
-d %>%
-  group_by(prep_cat) %>%
-  summarise(mean = mean(TEST2YRS, na.rm = T),
-            sd = sd(TEST2YRS, na.rm = T),
-            median = median(TEST2YRS, na.rm = T))
-
 
 # Table 2 -----------------------------------------------------------------
 
-# causal question: is HIV screening rate and STI screening rate higher
+# is HIV screening rate and STI screening rate higher
 # in current PrEP users compared to non-current PrEP users and never PrEP users?
 
 ## Descriptive Table 2
@@ -289,101 +232,33 @@ d$PREPCHKFREQ_COMB <- ifelse(is.na(d$PREPCHKFREQ),
                                d$PREPCHKFREQ_CURR, 
                                d$PREPCHKFREQ)
 
-table(d$PREPCHKFREQ_COMB, d$prep_cat, useNA = "always")
+addmargins(table(d$PREPCHKFREQ_COMB, d$prep_cat))
 
-# Frequency of STI testing after using PrEP compared to before  among current users
-table(d$STIFREQ_PREP, d$prep_cat, useNA = "always")
+# Frequency of HIV screening at PrEP visits
+addmargins(table(d$PREP_HIVTESTFREQ, d$prep_cat))
 
-# Frequency of throat swab/STI testing at PrEP visits
-table(d$PREP_STITHROATFREQ, d$prep_cat, useNA = "always")
+# Frequency of throat swab/STI screening at PrEP visits
+addmargins(table(d$PREP_STITHROATFREQ, d$prep_cat))
 
-# Frequency of rectal swab/STI testing at PrEP visits
-table(d$PREP_STIRECTFREQ, d$prep_cat, useNA = "always")
+# Frequency of rectal swab/STI screening at PrEP visits
+addmargins(table(d$PREP_STIRECTFREQ, d$prep_cat))
 
-# Frequency of urine sample/STI testing at PrEP visits
-table(d$PREP_STIURETHFREQ, d$prep_cat, useNA = "always")
+# Frequency of urine sample/STI screening at PrEP visits
+addmargins(table(d$PREP_STIURETHFREQ, d$prep_cat))
 
-# Frequency of blood sample/STI testing at PrEP visits
-table(d$PREP_BLOODFREQ, d$prep_cat, useNA = "always")
+# Frequency of blood sample/STI screening at PrEP visits
+addmargins(table(d$PREP_BLOODFREQ, d$prep_cat))
 
 
 # Table 3 -----------------------------------------------------------------
 
-# What are the predictors of recommended HIV and blood STI screening in ever PrEP 
+# What are the predictors of recommended blood and urogenital STI screening in ever PrEP 
 # users -- is there variation by demographics, risk behavior, or geogrpahy?
 
 # Create subset of ever PrEP users 
 # Excludes 3 PrEP users with missing data on current use
 d2 <- filter(d, d$PREP_REVISED == 1)
-
-# Recoding for always/not for HIV testing at PrEP visits
-d2$prep.hiv.always <- ifelse(d2$PREP_HIVTESTFREQ %in% 2:4, 0, d2$PREP_HIVTESTFREQ)
-table(d2$prep.hiv.always, useNA = "always")
-
-# Descriptive tables by exposure
-addmargins(table(d2$prep.hiv.always))
-addmargins(table(d2$DIVCODE, d2$prep.hiv.always))
-addmargins(table(d2$deep_south, d2$prep.hiv.always))
-addmargins(table(d2$race.cat, d2$prep.hiv.always))
-addmargins(table(d2$age_cat, d2$prep.hiv.always))
-addmargins(table(d2$insurance, d2$prep.hiv.always, useNA = "always"))
-
-# Logistic regression model (unadjusted)
-# E: Census division  O: HIV testing
-mod1.hiv <- glm(prep.hiv.always ~ as.factor(DIVCODE), data = d2, family = binomial())
-summary(mod1.hiv)
-exp(coef(mod1.hiv))
-exp(confint(mod1.hiv))
-
-a <- as.data.frame(coef(mod1.hiv))
-a$alpha <- mod1.hiv$coefficients[1]
-a$plogis <- plogis(a[,1] + a[,2])
-a
-
-# Logistic regression model (unadjusted)
-# E: Deep South  O: HIV testing
-mod2.hiv <- glm(prep.hiv.always ~ deep_south, data = d2, family = binomial())
-summary(mod2.hiv)
-exp(coef(mod2.hiv))
-exp(confint(mod2.hiv))
-
-plogis(sum(coef(mod2.hiv)))
-
-# Logistic regression model (unadjusted)
-# E: Race/ethnicity  O: HIV testing
-mod3.hiv <- glm(prep.hiv.always ~ race.cat, data = d2, family = binomial())
-summary(mod3.hiv)
-exp(coef(mod3.hiv))
-exp(confint(mod3.hiv))
-
-a3 <- as.data.frame(coef(mod3.hiv))
-a3$alpha <- mod3.hiv$coefficients[1]
-a3$plogis <- plogis(a3[,1] + a3[,2])
-a3
-
-# Logistic regression model (unadjusted)
-# E: Insurance  O: HIV testing
-mod4.hiv <- glm(prep.hiv.always ~ as.factor(insurance), data = d2, family = binomial())
-summary(mod4.hiv)
-exp(coef(mod4.hiv))
-exp(confint(mod4.hiv))
-
-a4 <- as.data.frame(coef(mod4.hiv))
-a4$alpha <- mod4.hiv$coefficients[1]
-a4$plogis <- plogis(a4[,1] + a4[,2])
-a4
-
-# Logistic regression model (unadjusted)
-# E: Age category  O: HIV testing
-mod5.hiv <- glm(prep.hiv.always ~ as.factor(age_cat), data = d2, family = binomial())
-summary(mod5.hiv)
-exp(coef(mod5.hiv))
-exp(confint(mod5.hiv))
-
-a5 <- as.data.frame(coef(mod5.hiv))
-a5$alpha <- mod5.hiv$coefficients[1]
-a5$plogis <- plogis(a5[,1] + a5[,2])
-a5
+nrow(d2)
 
 ## Q17d: How Often Tested for STIs Blood
 ##       1:4: always, sometimes, rarely, never
@@ -396,70 +271,61 @@ table(d2$prep.blood.sometimes, d2$PREP_BLOODFREQ)
 addmargins(table(d2$prep.blood.sometimes))
 
 # Descriptive tables by exposure
-addmargins(table(d2$prep.blood.sometimes))
-addmargins(table(d2$DIVCODE, d2$prep.blood.sometimes))
-addmargins(table(d2$deep_south, d2$prep.blood.sometimes))
-addmargins(table(d2$race.cat, d2$prep.blood.sometimes))
 addmargins(table(d2$age_cat, d2$prep.blood.sometimes))
-addmargins(table(d2$insurance, d2$prep.blood.sometimes, useNA = "always"))
+addmargins(table(d2$race.cat, d2$prep.blood.sometimes))
+addmargins(table(d2$insurance, d2$prep.blood.sometimes))
+addmargins(table(d2$HHINCOME, d2$prep.blood.sometimes))
+addmargins(table(d2$DIVCODE, d2$prep.blood.sometimes))
+addmargins(table(d2$southeast, d2$prep.blood.sometimes))
 
-# Logistic regression model (unadjusted)
-# E: Census division  O: Blood STI testing
-mod1.blood <- glm(prep.blood.sometimes ~ as.factor(DIVCODE), data = d2, family = binomial())
-summary(mod1.blood)
-exp(coef(mod1.blood))
-exp(confint(mod1.blood))
+# Poisson regression with robust error variance function (unadjusted models)
+poisson_reg <- function(outcome, exp) {
+  poisson <- glm (outcome ~ as.factor(exp), data = d2, family = "poisson")
+  pois.se <- diag(vcovHC(poisson, type = "HC"))^0.5
+  pois.ll <- coef(poisson) - 1.96*pois.se
+  pois.ul <- coef(poisson) + 1.96*pois.se
+  pois.rr <- coef(poisson)
+  round(cbind(exp(pois.rr), exp(pois.ll), exp(pois.ul)),2)
+}
 
-y <- as.data.frame(coef(mod1.blood))
-y$alpha <- mod1.blood$coefficients[1]
-y$plogis <- plogis(y[,1] + y[,2])
-y
+poisson_reg(d2$prep.blood.sometimes, d2$age_cat)
+poisson_reg(d2$prep.blood.sometimes, d2$race.cat)
+poisson_reg(d2$prep.blood.sometimes, d2$insurance)
+poisson_reg(d2$prep.blood.sometimes, d2$HHINCOME)
+poisson_reg(d2$prep.blood.sometimes, d2$DIVCODE)
+poisson_reg(d2$prep.blood.sometimes, d2$southeast)
 
-# Logistic regression model (unadjusted)
-# E: Deep south  O: Blood STI testing
-mod2.blood <- glm(prep.blood.sometimes ~ as.factor(deep_south), data = d2, family = binomial())
-summary(mod2.blood)
-exp(coef(mod2.blood))
-exp(confint(mod2.blood))
+## Q17c: How Often Tested for STIs Urethral
+##       1:4: always, sometimes, rarely, never
+table(d2$PREP_STIURETHFREQ, useNA = "always")
 
-plogis(sum(coef(mod2.blood)))
+# Recoding to always/sometimes vs. rarely/never urethral STI testings
+d2$prep.ureth.sometimes <- ifelse(d2$PREP_STIURETHFREQ %in% 1:2, 1, 
+                                  ifelse(d2$PREP_STIURETHFREQ %in% 3:4, 0, NA))
+table(d2$prep.ureth.sometimes, d2$PREP_STIURETHFREQ)
+addmargins(table(d2$prep.ureth.sometimes))
 
-# Logistic regression model (unadjusted)
-# E: Race/Ethnicity  O: Blood STI testing
-mod3.blood <- glm(prep.blood.sometimes ~ as.factor(race.cat), data = d2, family = binomial())
-summary(mod3.blood)
-exp(coef(mod3.blood))
-exp(confint(mod3.blood))
+# Descriptive tables by exposure
+addmargins(table(d2$age_cat, d2$prep.ureth.sometimes))
+addmargins(table(d2$race.cat, d2$prep.ureth.sometimes))
+addmargins(table(d2$insurance, d2$prep.ureth.sometimes))
+addmargins(table(d2$HHINCOME, d2$prep.ureth.sometimes))
+addmargins(table(d2$DIVCODE, d2$prep.ureth.sometimes))
+addmargins(table(d2$southeast, d2$prep.ureth.sometimes))
 
-y3 <- as.data.frame(coef(mod3.blood))
-y3$alpha <- mod3.blood$coefficients[1]
-y3$plogis <- plogis(y3[,1] + y3[,2])
-y3
+# Create indicator for exposure at site
+d2$exp.ureth <- ifelse(d2$anyIAI == 1, 1,
+                       ifelse(d2$anyIOI ==1, 1, 0))
+addmargins(table(d2$exp.ureth, d2$prep.ureth.sometimes))
 
-# Logistic regression model (unadjusted)
-# E: Age category  O: Blood STI testing
-mod4.blood <- glm(prep.blood.sometimes ~ as.factor(age_cat), data = d2, family = binomial())
-summary(mod4.blood)
-exp(coef(mod4.blood))
-exp(confint(mod4.blood))
-
-y4 <- as.data.frame(coef(mod4.blood))
-y4$alpha <- mod4.blood$coefficients[1]
-y4$plogis <- plogis(y4[,1] + y4[,2])
-y4
-
-# Logistic regression model (unadjusted)
-# E: Insurance  O: Blood STI testing
-mod5.blood <- glm(prep.blood.sometimes ~ as.factor(insurance), data = d2, family = binomial())
-summary(mod5.blood)
-exp(coef(mod5.blood))
-exp(confint(mod5.blood))
-
-y5 <- as.data.frame(coef(mod5.blood))
-y5$alpha <- mod5.blood$coefficients[1]
-y5$plogis <- plogis(y5[,1] + y5[,2])
-y5
-
+# Unadjusted Poisson regression models 
+poisson_reg(d2$prep.ureth.sometimes, d2$age_cat)
+poisson_reg(d2$prep.ureth.sometimes, d2$race.cat)
+poisson_reg(d2$prep.ureth.sometimes, d2$insurance)
+poisson_reg(d2$prep.ureth.sometimes, d2$HHINCOME)
+poisson_reg(d2$prep.ureth.sometimes, d2$DIVCODE)
+poisson_reg(d2$prep.ureth.sometimes, d2$southeast)
+poisson_reg(d2$prep.ureth.sometimes, d2$exp.ureth)
 
 # Table 4 -----------------------------------------------------------------
 
@@ -471,86 +337,28 @@ y5
 table(d2$PREP_STITHROATFREQ, useNA = "always")
 
 # Recoding to always/sometimes vs. rarely/never pharyngeal STI testings
-d2$prep.throat.sometimes <- ifelse(d2$PREP_STITHROATFREQ %in% 1:2, 1, 
+d2$prep.throat.sometimes <- ifelse(d2$PREP_STITHROATFREQ %in% 1:2, 1,
                                    ifelse(d2$PREP_STITHROATFREQ %in% 3:4, 0, NA))
 table(d2$prep.throat.sometimes, d2$PREP_STITHROATFREQ)
 addmargins(table(d2$prep.throat.sometimes))
 
 ## Descriptive tables by exposure
-addmargins(table(d2$prep.throat.sometimes))
 addmargins(table(d2$DIVCODE, d2$prep.throat.sometimes))
-addmargins(table(d2$deep_south, d2$prep.throat.sometimes))
+addmargins(table(d2$southeast, d2$prep.throat.sometimes))
 addmargins(table(d2$race.cat, d2$prep.throat.sometimes))
 addmargins(table(d2$age_cat, d2$prep.throat.sometimes))
-addmargins(table(d2$insurance, d2$prep.throat.sometimes, useNA = "always"))
+addmargins(table(d2$insurance, d2$prep.throat.sometimes))
 addmargins(table(d2$anyROI, d2$prep.throat.sometimes))
+addmargins(table(d2$HHINCOME, d2$prep.throat.sometimes))
 
-# Logistic regression model (unadjusted)
-# E: Census division  O: Pharyngeal STI testing
-mod1.throat <- glm(prep.throat.sometimes ~ as.factor(DIVCODE), data = d2, family = binomial())
-summary(mod1.throat)
-exp(coef(mod1.throat))
-exp(confint(mod1.throat))
-
-b <- as.data.frame(coef(mod1.throat))
-b$alpha <- mod1.throat$coefficients[1]
-b$plogis <- plogis(b[,1] + b[,2])
-b
-
-# Logistic regression model (unadjusted)
-# E: Deep south O: Pharyngeal STI testing
-mod2.throat <- glm(prep.throat.sometimes ~ as.factor(deep_south), data = d2, family = binomial())
-summary(mod2.throat)
-exp(coef(mod2.throat))
-exp(confint(mod2.throat))
-
-plogis(sum(coef(mod2.throat)))
-
-# Logistic regression model (unadjusted)
-# E: Race/ethnicity O: Pharyngeal STI testing
-mod3.throat <- glm(prep.throat.sometimes ~ race.cat, data = d2, family = binomial())
-summary(mod3.throat)
-exp(coef(mod3.throat))
-exp(confint(mod3.throat))
-
-b3 <- as.data.frame(coef(mod3.throat))
-b3$alpha <- mod3.throat$coefficients[1]
-b3$plogis <- plogis(b3[,1] + b3[,2])
-b3
-
-# Logistic regression model (unadjusted)
-# E: Age category O: Pharyngeal STI testing
-mod4.throat <- glm(prep.throat.sometimes ~ as.factor(age_cat), data = d2, family = binomial())
-summary(mod4.throat)
-exp(coef(mod4.throat))
-exp(confint(mod4.throat))
-
-b4 <- as.data.frame(coef(mod4.throat))
-b4$alpha <- mod4.throat$coefficients[1]
-b4$plogis <- plogis(b4[,1] + b4[,2])
-b4
-
-# Logistic regression model (unadjusted)
-# E: Insurance O: Pharyngeal STI testing
-mod5.throat <- glm(prep.throat.sometimes ~ as.factor(insurance), data = d2, family = binomial())
-summary(mod5.throat)
-exp(coef(mod5.throat))
-exp(confint(mod5.throat))
-
-b5 <- as.data.frame(coef(mod5.throat))
-b5$alpha <- mod5.throat$coefficients[1]
-b5$plogis <- plogis(b5[,1] + b5[,2])
-b5
-
-# Logistic regression model (unadjusted)
-# E: Exposure at pharyngeal site O: Pharyngeal STI testing
-mod6.throat <- glm(prep.throat.sometimes ~ as.factor(anyROI),
-                    data = d2, family = binomial())
-summary(mod6.throat)
-exp(coef(mod6.throat))
-exp(confint(mod6.throat))
-
-plogis(sum(coef(mod6.throat)))
+# Unadjusted Poisson regression models
+poisson_reg(d2$prep.throat.sometimes, d2$age_cat)
+poisson_reg(d2$prep.throat.sometimes, d2$race.cat)
+poisson_reg(d2$prep.throat.sometimes, d2$insurance)
+poisson_reg(d2$prep.throat.sometimes, d2$HHINCOME)
+poisson_reg(d2$prep.throat.sometimes, d2$DIVCODE)
+poisson_reg(d2$prep.throat.sometimes, d2$southeast)
+poisson_reg(d2$prep.throat.sometimes, d2$anyROI)
 
 ## Q17c: How Often Tested for STIs Rectal
 ##       1:4: always, sometimes, rarely, never
@@ -563,214 +371,63 @@ table(d2$prep.rect.sometimes, d2$PREP_STIRECTFREQ)
 addmargins(table(d2$prep.rect.sometimes))
 
 ## Descriptive tables by exposure
-addmargins(table(d2$prep.rect.sometimes))
 addmargins(table(d2$DIVCODE, d2$prep.rect.sometimes))
-addmargins(table(d2$deep_south, d2$prep.rect.sometimes))
+addmargins(table(d2$southeast, d2$prep.rect.sometimes))
 addmargins(table(d2$race.cat, d2$prep.rect.sometimes))
 addmargins(table(d2$age_cat, d2$prep.rect.sometimes))
-addmargins(table(d2$insurance, d2$prep.rect.sometimes, useNA = "always"))
+addmargins(table(d2$insurance, d2$prep.rect.sometimes))
 addmargins(table(d2$anyRAI, d2$prep.rect.sometimes))
+addmargins(table(d2$HHINCOME, d2$prep.rect.sometimes))
 
-# Logistic regression model (unadjusted)
-# E: Census division  O: Rectal STI testing
-mod1.rectal <- glm(prep.rect.sometimes ~ as.factor(DIVCODE), data = d2, family = binomial())
-summary(mod1.rectal)
-exp(coef(mod1.rectal))
-exp(confint(mod1.rectal))
+# Unadjsuted Poisson regression models
+poisson_reg(d2$prep.rect.sometimes, d2$age_cat)
+poisson_reg(d2$prep.rect.sometimes, d2$race.cat)
+poisson_reg(d2$prep.rect.sometimes, d2$insurance)
+poisson_reg(d2$prep.rect.sometimes, d2$HHINCOME)
+poisson_reg(d2$prep.rect.sometimes, d2$DIVCODE)
+poisson_reg(d2$prep.rect.sometimes, d2$southeast)
+poisson_reg(d2$prep.rect.sometimes, d2$anyRAI)
 
-c <- as.data.frame(coef(mod1.rectal))
-c$alpha <- mod1.rectal$coefficients[1]
-c$plogis <- plogis(c[,1] + c[,2])
-c
-
-# Logistic regression model (unadjusted)
-# E: Deep south O: Rectal STI testing
-mod2.rectal <- glm(prep.rect.sometimes ~ deep_south, data = d2, family = binomial())
-summary(mod2.rectal)
-exp(coef(mod2.rectal))
-exp(confint(mod2.rectal))
-
-plogis(sum(coef(mod2.rectal)))
-
-
-# Logistic regression model (unadjusted)
-# E: Race/Ethnicity O: Rectal STI testing
-mod3.rectal <- glm(prep.rect.sometimes ~ as.factor(race.cat), data = d2, family = binomial())
-summary(mod3.rectal)
-exp(coef(mod3.rectal))
-exp(confint(mod3.rectal))
-
-c3 <- as.data.frame(coef(mod3.rectal))
-c3$alpha <- mod3.rectal$coefficients[1]
-c3$plogis <- plogis(c3[,1] + c3[,2])
-c3
-
-# Logistic regression model (unadjusted)
-# E:Age category  O: Rectal STI testing
-mod4.rectal <- glm(prep.rect.sometimes ~ as.factor(age_cat), data = d2, family = binomial())
-summary(mod4.rectal)
-exp(coef(mod4.rectal))
-exp(confint(mod4.rectal))
-
-c4 <- as.data.frame(coef(mod4.rectal))
-c4$alpha <- mod4.rectal$coefficients[1]
-c4$plogis <- plogis(c4[,1] + c4[,2])
-c4
-
-# Logistic regression model (unadjusted)
-# E: Insurance O: Rectal STI testing
-mod5.rectal <- glm(prep.rect.sometimes ~ as.factor(insurance), data = d2, family = binomial())
-summary(mod5.rectal)
-exp(coef(mod5.rectal))
-exp(confint(mod5.rectal))
-
-c5 <- as.data.frame(coef(mod5.rectal))
-c5$alpha <- mod5.rectal$coefficients[1]
-c5$plogis <- plogis(c5[,1] + c5[,2])
-c5
-
-# Logistic regression model (unadjusted)
-# E: Exposure at site  O: Rectal STI testing
-mod6.rectal <- glm(prep.rect.sometimes ~ anyRAI, data = d2, family = binomial())
-summary(mod6.rectal)
-exp(coef(mod6.rectal))
-exp(confint(mod6.rectal))
-
-plogis(sum(coef(mod6.rectal)))
-
-## Q17c: How Often Tested for STIs Urethral
-##       1:4: always, sometimes, rarely, never
-table(d2$PREP_STIURETHFREQ, useNA = "always")
-
-# Recoding to always/sometimes vs. rarely/never urethral STI testings
-d2$prep.ureth.sometimes <- ifelse(d2$PREP_STIURETHFREQ %in% 1:2, 1, 
-                                 ifelse(d2$PREP_STIURETHFREQ %in% 3:4, 0, NA))
-table(d2$prep.ureth.sometimes, d2$PREP_STIURETHFREQ)
-addmargins(table(d2$prep.ureth.sometimes))
-
-# Descriptive tables by exposure
-addmargins(table(d2$prep.ureth.sometimes))
-addmargins(table(d2$DIVCODE, d2$prep.ureth.sometimes))
-addmargins(table(d2$deep_south, d2$prep.ureth.sometimes))
-addmargins(table(d2$race.cat, d2$prep.ureth.sometimes))
-addmargins(table(d2$age_cat, d2$prep.ureth.sometimes))
-addmargins(table(d2$insurance, d2$prep.ureth.sometimes, useNA = "always"))
-
-# Create indicator for exposure at site
-d2$exp.ureth <- ifelse(d2$anyIAI == 1, 1,
-                       ifelse(d2$anyIOI ==1, 1, 0))
-addmargins(table(d2$exp.ureth, d2$prep.ureth.sometimes))
-
-# Logistic regression model (unadjusted)
-# E: Census division O: Urethral STI testing
-mod1.ureth <- glm(prep.ureth.sometimes ~ as.factor(DIVCODE), data = d2, family = binomial())
-summary(mod1.ureth)
-exp(coef(mod1.ureth))
-exp(confint(mod1.ureth))
-
-x <- as.data.frame(coef(mod1.ureth))
-x$alpha <- mod1.ureth$coefficients[1]
-x$plogis <- plogis(x[,1] + x[,2])
-x
-
-# Logistic regression model (unadjusted)
-# E: Deep south O: Urethral STI testing
-mod2.ureth <- glm(prep.ureth.sometimes ~ as.factor(deep_south), data = d2, family = binomial())
-summary(mod2.ureth)
-exp(coef(mod2.ureth))
-exp(confint(mod2.ureth))
-
-plogis(sum(coef(mod2.ureth)))
-
-# Logistic regression model (unadjusted)
-# E: Race/ethnicity O: Urethral STI testing
-mod3.ureth <- glm(prep.ureth.sometimes ~ as.factor(race.cat), data = d2, family = binomial())
-summary(mod3.ureth)
-exp(coef(mod3.ureth))
-exp(confint(mod3.ureth))
-
-x3 <- as.data.frame(coef(mod3.ureth))
-x3$alpha <- mod3.ureth$coefficients[1]
-x3$plogis <- plogis(x3[,1] + x3[,2])
-x3
-
-# Logistic regression model (unadjusted)
-# E: Age category O: Urethral STI testing
-mod4.ureth <- glm(prep.ureth.sometimes ~ as.factor(age_cat), data = d2, family = binomial())
-summary(mod4.ureth)
-exp(coef(mod4.ureth))
-exp(confint(mod4.ureth))
-
-x4 <- as.data.frame(coef(mod4.ureth))
-x4$alpha <- mod4.ureth$coefficients[1]
-x4$plogis <- plogis(x4[,1] + x4[,2])
-x4
-
-# Logistic regression model (unadjusted)
-# E: Insurance O: Urethral STI testing
-mod5.ureth <- glm(prep.ureth.sometimes ~ as.factor(insurance), data = d2, family = binomial())
-summary(mod5.ureth)
-exp(coef(mod5.ureth))
-exp(confint(mod5.ureth))
-
-x5 <- as.data.frame(coef(mod5.ureth))
-x5$alpha <- mod5.ureth$coefficients[1]
-x5$plogis <- plogis(x5[,1] + x5[,2])
-x5
-
-# Logistic regression model (unadjusted)
-# E: Exposure at site O: Urethral STI testing
-mod6.ureth <- glm(prep.ureth.sometimes ~ as.factor(exp.ureth), data = d2, family = binomial())
-summary(mod6.ureth)
-exp(coef(mod6.ureth))
-exp(confint(mod6.ureth))
-
-plogis(sum(coef(mod6.ureth)))
 
 # Table 5 -----------------------------------------------------------------
 
-# Main predictor: Deep south
-# Outcomes: HIV testing and blood, urethral, rectal, & pharyngeal STI testing
+# Main predictor: Southeast
+# Outcomes: blood, urogenital, rectal, & pharyngeal STI testing
 # Multivariable associations
-## Adjusted for age, race/ethnicity, and exposure at site (where applicable)
+## Adjusted for age, race/ethnicity, annual household income, and exposure at site (where applicable)
 
-# Logistic regression model (adjusted / control for race/eth, age)
-# E: Deep South  O: HIV testing
-mod6.hiv <- glm(prep.hiv.always ~ deep_south + race.cat + age,
-                data = d2, family = binomial())
-summary(mod6.hiv)
-exp(coef(mod6.hiv))
-exp(confint(mod6.hiv))
+# Poisson regression model (adjusted / control for race/eth, age, income)
+# E: Southeast  O: Syphilis testing
+poisson.adj1 <- glm (prep.blood.sometimes ~ southeast + age + race.cat + as.factor(HHINCOME), data = d2, family = "poisson")
+pois.se <- diag(vcovHC(poisson.adj1, type = "HC"))^0.5
+pois.ll <- coef(poisson.adj1) - 1.96*pois.se
+pois.ul <- coef(poisson.adj1) + 1.96*pois.se
+pois.rr <- coef(poisson.adj1)
+round(cbind(exp(pois.rr), exp(pois.ll), exp(pois.ul)),2)
 
-# Logistic regression model (adjusted / control for race/eth, age)
-# E: Deep south  O: Blood STI testing
-mod6.blood <- glm(prep.blood.sometimes ~ as.factor(deep_south) + age + race.cat,
-                  data = d2, family = binomial())
-summary(mod6.blood)
-exp(coef(mod6.blood))
-exp(confint(mod6.blood))
+# Poisson regression model (adjusted / control for race/eth, age, income, exposure at site)
+# E: Southeast  O: Urethral STI testing
+poisson.adj2 <- glm (prep.ureth.sometimes ~ southeast + age + race.cat + exp.ureth + as.factor(HHINCOME), data = d2, family = "poisson")
+pois.se <- diag(vcovHC(poisson.adj2, type = "HC"))^0.5
+pois.ll <- coef(poisson.adj2) - 1.96*pois.se
+pois.ul <- coef(poisson.adj2) + 1.96*pois.se
+pois.rr <- coef(poisson.adj2)
+round(cbind(exp(pois.rr), exp(pois.ll), exp(pois.ul)),2)
 
-# Logistic regression model (adjusted / control for race/eth, age, exposure at site)
-# E: Deep south  O: Pharyngeal STI testing
-mod7.throat <- glm(prep.throat.sometimes ~ as.factor(deep_south) + age + race.cat + anyROI,
-                   data = d2, family = binomial())
-summary(mod7.throat)
-exp(coef(mod7.throat))
-exp(confint(mod7.throat))
+# Poisson regression model (adjusted / control for race/eth, age, income, exposure at site)
+# E: Southeast  O: Rectal STI testing
+poisson.adj3 <- glm (prep.rect.sometimes ~ southeast + age + race.cat + anyRAI + as.factor(HHINCOME), data = d2, family = "poisson")
+pois.se <- diag(vcovHC(poisson.adj3, type = "HC"))^0.5
+pois.ll <- coef(poisson.adj3) - 1.96*pois.se
+pois.ul <- coef(poisson.adj3) + 1.96*pois.se
+pois.rr <- coef(poisson.adj3)
+round(cbind(exp(pois.rr), exp(pois.ll), exp(pois.ul)),2)
 
-# Logistic regression model (adjusted / control for race/eth, age, and exposure at site)
-# E: Deep south  O: Rectal STI testing
-mod7.rectal <- glm(prep.rect.sometimes ~ deep_south + age + race.cat + anyRAI,
-                   data = d2, family = binomial())
-summary(mod7.rectal)
-exp(coef(mod7.rectal))
-exp(confint(mod7.rectal))
-
-# Logistic regression model (adjusted / control for race/eth, age, and exposure at site)
-# E: Deep south  O: Urethral STI testing
-mod7.ureth <- glm(prep.ureth.sometimes ~ as.factor(deep_south) + age + race.cat + exp.ureth,
-                  data = d2, family = binomial())
-summary(mod7.ureth)
-exp(coef(mod7.ureth))
-exp(confint(mod7.ureth))
-
+# Poisson regression model (adjusted / control for race/eth, age, income, exposure at site)
+# E: Southeast  O: Pharyngeal STI testing
+poisson.adj4 <- glm (prep.throat.sometimes ~ southeast + age + race.cat + anyROI + as.factor(HHINCOME), data = d2, family = "poisson")
+pois.se <- diag(vcovHC(poisson.adj4, type = "HC"))^0.5
+pois.ll <- coef(poisson.adj4) - 1.96*pois.se
+pois.ul <- coef(poisson.adj4) + 1.96*pois.se
+pois.rr <- coef(poisson.adj4)
+round(cbind(exp(pois.rr), exp(pois.ll), exp(pois.ul)),2)
