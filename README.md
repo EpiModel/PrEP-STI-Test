@@ -2,9 +2,10 @@
 
 This repository contains the analysis scripts and tables for the following study:
 
-> [insert citation]
+> Chandra C, Weiss K, Kelley C, Marcus J, Jenness SM. Gaps in Sexually Transmitted Infection Screening among Men who have Sex with Men in PrEP Care in the United States. _Under Review_
 
-<img src="https://github.com/EpiModel/PrEP-STI-Test/blob/updates_branch/Figures/Figure_1.png">
+
+<img src="https://github.com/EpiModel/PrEP-STI-Test/blob/master/Figures/Figure_1.png">
 
 ## Abstract
 
