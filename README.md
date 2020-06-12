@@ -11,15 +11,15 @@ This repository contains the analysis scripts and tables for the following study
 
 ### Background
 
-The U.S. Centers for Disease Control and Prevention (CDC) recommends comprehensive sexually transmitted infection (STI) screening every 3–6 months for men who have sex with men (MSM) using HIV preexposure prophylaxis (PrEP). The gaps between clinical practice and these recommendations by region have not been quantified.
+The U.S. Centers for Disease Control and Prevention (CDC) recommends comprehensive sexually transmitted infection (STI) screening every 3–6 months for men who have sex with men (MSM) using HIV preexposure prophylaxis (PrEP). The gaps between these recommendations and clinical practice by region have not been quantified.
 
 ### Methods
 
-We collected data between 2017 and 2019 on STI screening among MSM across the U.S., stratified by current, prior, and never PrEP use. Poisson regression models with robust error variance were used to assess factors, including residence in the Southeastern U.S., associated with exposure site-specific STI screening during PrEP care.
+We used survey data collected from the internet-based ARTnet study between 2017 and 2019 on STI screening among MSM across the U.S., stratified by current, prior, and never PrEP use. Poisson regression models with robust error variance were used to model factors, including residence in the Southeast, associated with consistent (“always” or “sometimes”) exposure site-specific STI screening during PrEP care. 
 
 ### Results
 
-Of 3259 HIV-negative MSM, 19% were currently using PrEP, 6% had used PrEP in the past, and 75% had never used PrEP ([Table 1](https://github.com/EpiModel/PrEP-STI-Test/blob/updates_branch/Figures/Table_1.pdf)). Among ever PrEP users, 87%, 78%, 57%, and 64% were consistently (always or sometimes) screened for STIs by blood sample, urine sample/urethral swab, rectal swab, or pharyngeal swab, respectively, during PrEP care ([Table 2](https://github.com/EpiModel/PrEP-STI-Test/blob/updates_branch/Figures/Table_2.pdf)). PrEP users in the Southeast were significantly less likely to be consistently screened for urogenital [adjusted prevalence ratio (aPR): 0.86, 95% confidence interval (CI): 0.76, 0.98] and rectal STIs (aPR: 0.76, 95% CI: 0.62, 0.93) during PrEP care ([Table 5](https://github.com/EpiModel/PrEP-STI-Test/blob/updates_branch/Figures/Table_5.pdf)).
+Of 3259 HIV-negative MSM, 19% were currently using PrEP, 6% had used PrEP in the past, and 75% had never used PrEP ([Table 1](https://github.com/EpiModel/PrEP-STI-Test/blob/updates_branch/Figures/Table_1.pdf)). Among ever PrEP users, 87%, 78%, 57%, and 64% were consistently (always or sometimes) screened for STIs by blood sample, urine sample/urethral swab, rectal swab, or pharyngeal swab, respectively, during PrEP care ([Table 2](https://github.com/EpiModel/PrEP-STI-Test/blob/updates_branch/Figures/Table_2.pdf)). PrEP users in the Southeast were significantly less likely to be consistently screened for urogenital (adjusted prevalence ratio [aPR], 0.86; 95% confidence interval [CI], 0.76–0.98) and rectal STIs (aPR, 0.76; 95% CI, 0.62–0.93) during PrEP care ([Table 5](https://github.com/EpiModel/PrEP-STI-Test/blob/updates_branch/Figures/Table_5.pdf)).
 
 ### Conclusions
 
